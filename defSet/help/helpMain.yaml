@@ -1,0 +1,31 @@
+- group: 基本用户指令
+  list:
+    - icon: role
+      title: '#tako召唤注册 注销'
+      desc: 顾名思义...
+    - icon: role
+      title: '#tk个人信息'
+      desc: 查看游戏账号的基本信息
+    - icon: role
+      title: '#tk个人设置'
+      desc: 设置游戏账号的基本信息
+    - icon: role
+      title: '#tk改名 设置宣言'
+      desc: 后面+要设置的名字/宣言
+    - icon: role
+      title: '#tk自动加入新游戏开/关'
+      desc: 开了，游戏开始就会自动加入
+    - icon: weapon
+      title: '#tk加入/退出当前游戏 '
+      desc: 退出了就不能加入这局了哦
+- group: 管理员指令
+  list:
+    - icon: team
+      title: '#tako召唤开始新游戏'
+      desc: 顾名思义
+    - icon: team
+      title: '#tako召唤结束当前游戏'
+      desc: dddd
+    - icon: 浮世
+      title: '#tako召唤清除历史记录'
+      desc: 删光光！当然不包括用户数据...

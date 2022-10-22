@@ -1,0 +1,9 @@
+currentVersion: alphaV0.0.4
+updateDate: 2022/10/22
+disc:
+  - 实现了excel和BFS搜索最短路径
+previousVerions:
+  - version: alphaV0.0.3
+  - updateDate: 2022/10/18
+  - disc:
+      - 实现了发送帮助图像
