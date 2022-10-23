@@ -38,5 +38,6 @@ export const readYaml = async function (root, relPath) {
  */
 export const writeYaml = async function (root, relPath, obj) {
   const path = getYamlPath(root, relPath);
+  console.log(relPath, obj);
   return fs.promises.writeFile(path, YAML.stringify(obj), 'utf-8');
 };

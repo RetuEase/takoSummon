@@ -1,5 +1,7 @@
 // Functions
 import { noSeeInfo, getGameId } from '../../tools/fileSystem/inspect.js';
+import { readFolderSync } from '../../tools/fileSystem/mrDir.js';
+import TimingTaskModel from '../../models/taskModel/timingTaskModel.js';
 // Templates
 import { adminCmdHandler } from '../../apps/BasicCmd/AdminCmd.js';
 import * as CurModel from '../../models/basicModel/adminCmdModel.js';
@@ -62,8 +64,14 @@ const endCurrentGame = async function (eData) {
 
   // 2) 通知redis
   await redis.set('takoSummon:game:Id', '');
+  readFolderSync('userData').forEach(
+    async userId => await redis.set(`takoSummon:${userId}:curUserAct`, '')
+  );
+  // TODO: 暴力，不知道能不能改
+  // 3) 清空定时任务列表
+  TimingTaskModel.clear();
 
-  // 3) 标记这个游戏文件夹为已结束，删除log备忘录并返回消息
+  // 4) 标记这个游戏文件夹为已结束，删除log备忘录并返回消息
   CurModel.shutGameRepo(gameId);
   return `当前游戏[${gameId}]已结束！`;
 };

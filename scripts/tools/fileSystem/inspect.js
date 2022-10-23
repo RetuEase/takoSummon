@@ -31,11 +31,16 @@ export const noSeeInfo = function (userId) {
  */
 export const getGameId = async function () {
   const gameId = await redis.get('takoSummon:game:Id');
+  console.log(1, gameId);
   if (gameId) return gameId;
 
+  console.log(2, gameId);
   if (!fs.existsSync(`${PATH.log}${FNAME.gameMark}.yaml`)) return '';
 
-  return (await readYaml('log', `${FNAME.gameMark}`)).gameId;
+  const newGameId = (await readYaml('log', `${FNAME.gameMark}`)).gameId;
+  await redis.set('takoSummon:game:Id', newGameId);
+  console.log(3, newGameId);
+  return newGameId;
 };
 
 /**

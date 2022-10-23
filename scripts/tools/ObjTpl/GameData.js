@@ -15,9 +15,3 @@ export class TimingTask {
     this.endTime = +endTime;
   }
 }
-
-export class TimingTaskList {
-  constructor() {
-    this.ttList = [new TimingTask(false, Number.MAX_SAFE_INTEGER)];
-  }
-}

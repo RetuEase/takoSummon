@@ -69,33 +69,4 @@ export class _ParentClass extends plugin {
       return Bot.sendGroupMsg(+groupId, msg).catch(err => Bot.logger.mark(err));
     }
   }
-
-  // INFO: Test
-  async syncRedis() {
-    const gameId = getGameId();
-    // 检查任务列表并加载到Redis
-    // 1) 遍历用户数据文件夹，参考index.js并列读取autoJoinNewGame
-    const uIdOrder = [];
-    const utProms = readFolderSync('userData').map(uId => {
-      uIdOrder.push(uId);
-      return readYaml('userData', `${uId}/${gameId}/${FNAME.taskList}`);
-    });
-    const utLoads = await Promise.allSettled(utProms);
-
-    // 2) 如果发现非空，就把第一个设置为对应的redis
-    utLoads.forEach(({ status, value: utList }, index) => {
-      // 如果读不到gameId文件夹自然会失败
-      if (status !== 'fulfilled') return;
-      if (utList.length > 0)
-        redis.set(
-          `takoSummon:${uIdOrder[index]}:curUserAct`,
-          JSON.stringify(utList[0])
-        );
-    });
-  }
 }
-
-// Functions
-import { readYaml, writeYaml } from '../../tools/fileSystem/rwYaml.js';
-import { mkdir, rm, readFolderSync } from '../../tools/fileSystem/mrDir.js';
-import FNAME from '../../tools/fileSystem/__FILE_NAME.js';

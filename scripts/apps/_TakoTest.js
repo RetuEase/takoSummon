@@ -6,8 +6,7 @@ import Show from '../views/show.js'; // TEST3
 import XLSX from 'node-xlsx'; // TEST4
 import Graph from '../tools/misc/graph.js'; // TEST5
 import { getNowTimeStamp } from '../tools/misc/misc.js'; // TEST5
-// import { pushNewTt, rmTt } from '../models/ttModel/takoTtMonitorModel.js'; // TEST6
-// import { pushNewUt } from '../models/ttModel/takoUtMonitorModel.js'; // TEST6
+import { push } from '../models/taskModel/userTaskModel.js'; // TEST6
 import { getGameId } from '../tools/fileSystem/inspect.js';
 
 /**
@@ -16,19 +15,28 @@ import { getGameId } from '../tools/fileSystem/inspect.js';
 const TEST_PRIOR = 200;
 
 /** 前往的calc一定记得加半途！ */
-export const calc_takoTest = async function (point1, point2) {
+export const calc_takoTest = async function (userAct) {
+  const {
+    params: [point1, point2],
+  } = userAct;
+  userAct.params[2] = true; // 加半途
+
   const nowTime = getNowTimeStamp();
   const endTime =
     nowTime + ((await Graph.getEdgeLen(point1, point2)) / 10) * 60000;
   return [nowTime, endTime];
 };
 
-export const takoTest = async function (userId) {
-  const curUserAct = await redis.get(`takoSummon:${userId}:curUserAct`);
-  const { informMsg, params, isGroup, isPrivate, groupId } =
-    JSON.parse(curUserAct);
+export const takoTest = async function (curUserAct) {
+  const { informMsg, params, isGroup, isPrivate, groupId, userId } = curUserAct;
   console.log(`I have been called! ${userId} ${params}`);
-  return { informMsg, isGroup, isPrivate, groupId, userId };
+  return {
+    informMsg: `${params[0]}${informMsg}${params[1]}`,
+    isGroup,
+    isPrivate,
+    groupId,
+    userId,
+  };
 };
 
 export class _TakoTest extends plugin {
@@ -139,6 +147,42 @@ export class _TakoTest extends plugin {
     // ); // 半途
     // newTasksArr.forEach(msg => console.log(msg));
     // INFO TEST6 221021 221022
+    const gameId = await getGameId();
+    if (!gameId) return this.reply(e, '忘记开始游戏啦');
+    const userId = e.user_id;
+    const curTask = await redis.get(`takoSummon:${userId}:curUserAct`);
+    // WARNING: 记得检查有没有加入游戏
+    const newTask1 = {
+      actApp: '_TakoTest',
+      actName: 'takoTest',
+      informMsg: '前往',
+      params: ['1', '2', false],
+      isGroup: e.isGroup || false,
+      groupId: e.group_id || false,
+      isPrivate: e.isPrivate || false,
+      userId: e.user_id,
+    };
+    const newTask2 = {
+      actApp: '_TakoTest',
+      actName: 'takoTest',
+      informMsg: '前往',
+      params: ['2', '3', false],
+      isGroup: e.isGroup || false,
+      groupId: e.group_id || false,
+      isPrivate: e.isPrivate || false,
+      userId: e.user_id,
+    };
+    // redis-takoSummon:userId:curUserAct里有没有东西
+    // 1) 有东西
+    if (curTask) {
+      const curUserAct = JSON.parse(curTask);
+      this.reply(e, `当前行动:${curUserAct.informMsg}`);
+      await push(userId, newTask2);
+      return this.reply(e, '加到任务列表里了！');
+    }
+    await push(userId, newTask1, 10);
+
+    return this.reply(e, '等待回调函数吧！');
   }
 
   // TEST4 221019 试读xlsx 1)

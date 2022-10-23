@@ -2,10 +2,10 @@ import { getNowTimeStamp } from './misc.js';
 import Config from '../fileSystem/config.js';
 
 // 读一遍地图的图(Graph)
-let gameMapGraph = await Config.getConfig('gameSet', 'gameMap');
+let gameMapGraph = (await Config.getConfig('gameSet', 'gameMap')).table;
 Config.change_gameSet_gameMap = async function () {
   // 如果改变了，重新读
-  gameMapGraph = await Config.getConfig('gameSet', 'gameMap');
+  gameMapGraph = (await Config.getConfig('gameSet', 'gameMap')).table;
 };
 
 // 路径对象模板
@@ -86,7 +86,7 @@ class Graph {
    * 放进来之前记得统一一下tasksArr里的informMsg为前往endPoint
    * @param {Number} commuteSpeed
    * @param  {...any} tasksArr 旧的一串“前往XX”obj(其实只有第一个和最后一个第第二个参数有用，中间的全填0都行)
-   * @returns {Array} 新的一串“前往XX”obj
+   * @returns {Array} 新的一串“前往XX”obj（数组！！！）
    */
   getPathArr(commuteSpeed, ...tasksArr) {
     // 这里的time都是timestamp(ms)
@@ -94,7 +94,7 @@ class Graph {
     // 1) 从tasksArr里拿到我们要的数据
     // 'actApp actName informMsg sP,eP,hW? sT eT'
     const curTask = tasksArr.at(0); // 当前是或即将是curTask的action
-    const { actApp, actName, informMsg, params } = curTask;
+    const { params } = curTask;
     const [startPoint, curEndPoint, halfway] = params;
     const endPoint = tasksArr.at(-1).params[1];
 
@@ -152,6 +152,7 @@ class Graph {
     }
 
     // 7) 将最优路径格式化为n-1个obj放入数组中返回
+    console.log(bestPath);
     const newTasksArr = bestPath
       .map((point, i, arr) => {
         // 如果是从0到出发点，那么可视为从首个目标点出发/折返；否则仍视为从原出发点出发
@@ -161,9 +162,7 @@ class Graph {
             startPoint === arr[i + 1] ? curEndPoint : startPoint;
           // sT是计算出来的，方便再次确认距离
           return {
-            actApp,
-            actName,
-            informMsg,
+            ...curTask,
             params: [fakeStartPoint, arr[i + 1], true], // sT,eT,hW
             startTime:
               nowTime - (curGraph[0][fakeStartPoint] / commuteSpeed) * 60000,
@@ -175,10 +174,11 @@ class Graph {
         // NOTE: 外面的函数应当履行将非半途但推入当前行动的obj改为半途、计算4、5的责任
         if (i < arr.length - 1)
           return {
-            actApp,
-            actName,
-            informMsg,
+            ...curTask,
             params: [arr[i], arr[i + 1], false],
+            // 不仅不计算，还要把你放进来的清空！ NOTE
+            startTime: false,
+            endTime: false,
           };
 
         // 终点，不用管，还要删

@@ -23,7 +23,6 @@ export default {
   _gameInfo: '_gameInfo', // 本局游戏信息
   blackList: 'blackList', // 本局游戏黑名单
   attendList: 'attendList', // 本局游戏参与者
-  timingTask: 'timingTask', // 本局游戏定时任务存储点
 
   // Files in logs
   gameHistory: 'gameHistory', // 历史游戏记录

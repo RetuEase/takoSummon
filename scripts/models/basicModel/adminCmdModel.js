@@ -3,7 +3,7 @@ import { readYaml, writeYaml } from '../../tools/fileSystem/rwYaml.js';
 import { mkdir, rm, readFolderSync } from '../../tools/fileSystem/mrDir.js';
 import { getNowTime } from '../../tools/misc/misc.js';
 // Templates
-import { GameInfo, TimingTaskList } from '../../tools/ObjTpl/GameData.js';
+import { GameInfo } from '../../tools/ObjTpl/GameData.js';
 import { GhObj } from '../../tools/ObjTpl/Logs.js';
 import FNAME from '../../tools/fileSystem/__FILE_NAME.js';
 import Config from '../../tools/fileSystem/config.js';
@@ -77,11 +77,6 @@ export const mkGameRepo = async function () {
     ),
     writeYaml('gameData', `${gameId}/${FNAME.blackList}`, []),
     writeYaml('gameData', `${gameId}/${FNAME.attendList}`, []),
-    writeYaml(
-      'gameData',
-      `${gameId}/${FNAME.timingTask}`,
-      new TimingTaskList()
-    ),
 
     // 创建log备忘录
     writeYaml('log', `${FNAME.gameMark}`, { gameId }),
