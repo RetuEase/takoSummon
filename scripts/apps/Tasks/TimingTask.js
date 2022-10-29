@@ -16,6 +16,7 @@ export class TimingTask extends _ParentClass {
       priority: TTM_PRIOR,
       rule: [],
     });
+
     [this.cron, this.detect] = timingTaskHandler;
     this.task = {
       cron: this.cron,

@@ -1,13 +1,13 @@
+import { getGameId } from '../../tools/fileSystem/inspect.js';
+
 import { timingTaskHandler } from '../../apps/Tasks/TimingTask.js';
 import TimingTaskMonitor from '../../models/taskModel/timingTaskModel.js';
 import * as UaModel from '../../models/taskModel/curUserActModel.js';
-import { getGameId } from '../../tools/fileSystem/inspect.js';
-
-await UaModel.initTt();
 
 timingTaskHandler.push('*/6 * * * * ?'); // 6秒触发一次
 
 const detect = async function () {
+  console.log('detecting...');
   // 1) 条件判断
   const gameId = await getGameId();
   if (!gameId) return false;
@@ -18,3 +18,6 @@ const detect = async function () {
   return replyObj;
 };
 timingTaskHandler.push(detect);
+
+/** 最后再init，防止上面的没push进去 */
+await UaModel.initTt();

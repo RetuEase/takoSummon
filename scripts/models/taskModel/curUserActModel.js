@@ -2,19 +2,16 @@
 
 import { readFolderSync } from '../../tools/fileSystem/mrDir.js';
 import { getGameId } from '../../tools/fileSystem/inspect.js';
+
+import Ctrler from '../../controllers/ctrler.js';
+
 import TimingTaskMonitor from './timingTaskModel.js';
 import * as UtModel from './userTaskModel.js';
-import * as _TakoTest from '../../apps/_TakoTest.js';
 
 /** 给userAct添加sT/eT */
 const addTime = async function (userAct, actApp, actName) {
-  let sT, eT;
   // 调用对应的calc函数来计算任务的开始和结束时间
-  switch (actApp) {
-    case '_TakoTest':
-      [sT, eT] = await _TakoTest[`calc_${actName}`](userAct);
-      break;
-  }
+  const [sT, eT] = await Ctrler[actApp][`calc_${actName}`](userAct);
 
   return {
     ...userAct,
@@ -25,12 +22,7 @@ const addTime = async function (userAct, actApp, actName) {
 
 const exeFunc = async function (userAct) {
   const { actApp, actName } = userAct;
-  let replyMsgObj;
-  switch (actApp) {
-    case '_TakoTest':
-      replyMsgObj = await _TakoTest[actName](userAct);
-      break;
-  }
+  const replyMsgObj = await Ctrler[actApp][actName](userAct);
 
   return replyMsgObj;
 };

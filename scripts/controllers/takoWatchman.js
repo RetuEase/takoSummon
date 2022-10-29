@@ -2,7 +2,7 @@
 import { existUser } from '../tools/fileSystem/inspect.js';
 // Templates
 import { watchmanHandler } from '../apps/TakoWatchman.js';
-import * as UserCmd from '../controllers/basicCmd/userCmdCtrler.js';
+import Ctrler from './ctrler.js';
 
 /** 0分析此用户的消息应该给谁处理 */
 const analyse = async function (eData) {
@@ -19,12 +19,7 @@ const analyse = async function (eData) {
   const { operaApp, operaName } = JSON.parse(curUserOpera);
 
   // 3) 依名调用（传入盈余的消息即可，注意callback的第二个参数要有）
-  let replyMsg;
-  switch (operaApp) {
-    case 'UserCmd':
-      replyMsg = UserCmd[operaName](eData, true);
-      break;
-  }
+  const replyMsg = Ctrler[operaApp][operaName](eData, true);
 
   // 4) redis标记完成任务并返回消息
   await redis.set(`takoSummon:${userId}:curUserOpera`, '');
