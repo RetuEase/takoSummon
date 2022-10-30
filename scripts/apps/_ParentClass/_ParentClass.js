@@ -65,7 +65,7 @@ export class _ParentClass extends plugin {
     if (group) {
       Bot.logger.mark(`tako发送群消息[${group.name}](${groupId})`);
       // 3) client.pickGroup()
-      if (at) msg = [segment.at(at), `\n${msg}`];
+      if (at) msg = [segment.at(+at), `\n${msg}`];
       return Bot.sendGroupMsg(+groupId, msg).catch(err => Bot.logger.mark(err));
     }
   }

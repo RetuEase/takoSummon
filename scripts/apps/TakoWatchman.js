@@ -1,4 +1,4 @@
-import plugin from '../../../../lib/plugins/plugin.js';
+import { _ParentClass } from './_ParentClass/_ParentClass.js';
 
 /**
  * 监听一切不特别的#tk指令
@@ -6,7 +6,7 @@ import plugin from '../../../../lib/plugins/plugin.js';
 const WATCHMAN_PRIOR = 10000;
 export const watchmanHandler = [];
 
-export class TakoWatchman extends plugin {
+export class TakoWatchman extends _ParentClass {
   constructor() {
     super({
       name: 'TakoWatchman',
@@ -36,6 +36,8 @@ export class TakoWatchman extends plugin {
     const replyMsg = await this.analyse(eData);
 
     // 3) 收场
-    return this.reply(replyMsg);
+    return Array.isArray(replyMsg)
+      ? this.reply(e, replyMsg.join('\n---------------\n'), true)
+      : this.reply(e, replyMsg, true);
   }
 }

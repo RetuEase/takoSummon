@@ -7,7 +7,8 @@ import * as UserCmd from './basicCmd/userCmdCtrler.js';
 
 // userAct
 import * as _TakoTest from '../apps/_TakoTest.js';
+import * as placeInteractCmdCtrler from './gameCmd/placeInteractCmdCtrler.js';
 
 // userQuery
 
-export default { UserCmd, _TakoTest };
+export default { UserCmd, _TakoTest, placeInteractCmdCtrler };

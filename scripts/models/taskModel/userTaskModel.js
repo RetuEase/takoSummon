@@ -1,7 +1,10 @@
+// Functions
 import { readYaml, writeYaml } from '../../tools/fileSystem/rwYaml.js';
 import { getGameId } from '../../tools/fileSystem/inspect.js';
+import { getRestTime } from '../../tools/misc/misc.js';
+// Templates
+import * as UaModel from './curUserActModel.js';
 import FNAME from '../../tools/fileSystem/__FILE_NAME.js';
-import { change } from './curUserActModel.js';
 import Graph from '../../tools/misc/graph.js';
 
 // 声明文件锁（防止另一个人读完还没写入你先写入了，然后他又写入，你写的就没了）
@@ -24,7 +27,20 @@ export const getFirst = async function (userId) {
   else return false;
 };
 
-/** 推入一个新的userTask如taskList，如果需要合并分解要推入commuteSpeed */
+/**
+ * 推入一个新的userTask入taskList
+ * @param {{
+      actApp: String,
+      actName: String,
+      informMsg: String,
+      params: [String, String?, Boolean?],
+      isGroup: Boolean,
+      groupId: String,
+      isPrivate: Boolean,
+      userId: String,
+    }} newUt 新的userTask对象
+ * @param {Number} commuteSpeed 如果需要合并分解要推入commuteSpeed
+ */
 export const push = async function (userId, newUt, commuteSpeed = 10) {
   const gameId = await getGameId();
   if (!gameId) return;
@@ -42,7 +58,7 @@ export const push = async function (userId, newUt, commuteSpeed = 10) {
   const isCommute = newUt.informMsg.includes('前往');
 
   // 3) 合并分解
-  if (isCommute && taskList.length > 0) {
+  if (isCommute) {
     const commuteArr = [newUt];
 
     for (let i = taskList.length - 1; i >= 0; i--) {
@@ -50,14 +66,14 @@ export const push = async function (userId, newUt, commuteSpeed = 10) {
       commuteArr.unshift(taskList.pop());
     }
 
-    taskList.push(...Graph.getPathArr(commuteSpeed, ...commuteArr));
+    taskList.push(...(await Graph.getPathArr(commuteSpeed, ...commuteArr)));
     console.log('合并分解', commuteArr, taskList);
-    change(userId, taskList[0]);
+    taskList[0] = await UaModel.change(userId, taskList[0]); // NOTE
   }
   // 3) 如果空空，也要更新curUserAct，还要拿到返回的sT/eT更新自己
   else if (taskList.length < 1) {
     taskList.push(newUt);
-    taskList[0] = await change(userId, taskList[0]); // NOTE
+    taskList[0] = await UaModel.change(userId, taskList[0]); // NOTE
     console.log('空空', taskList);
   }
   // 3) 如果不用合并分解也不空，直接推入
@@ -76,7 +92,11 @@ export const push = async function (userId, newUt, commuteSpeed = 10) {
   unlock();
 };
 
-/** 取消taskList中的一个userTask */
+/**
+ * 取消taskList中的一个userTask
+ * @param {Boolean} together 是否开启一并删除
+ * @returns 船新userTask的informMsg，没有的话就是undefined
+ */
 export const remove = async function (userId, index, together = true) {
   const gameId = await getGameId();
   if (!gameId) return;
@@ -105,12 +125,15 @@ export const remove = async function (userId, index, together = true) {
     }
     taskList.splice(startIndex);
 
-    change(userId, taskList[0]);
+    const first = await UaModel.change(userId, taskList[0]); // NOTE
+    if (first) taskList[0] = first;
   }
   // 3) 如果删的是第一个，也要更新curUserAct
   else if (index === 0) {
     taskList.splice(index, 1);
-    change(userId, taskList[0]);
+
+    const first = await UaModel.change(userId, taskList[0]); // NOTE
+    if (first) taskList[0] = first;
   }
   // 3) 如果不是前往且删的不是第一个，就直接删除之
   else {
@@ -125,4 +148,10 @@ export const remove = async function (userId, index, together = true) {
   );
 
   unlock();
+
+  // 5) push的时候由对应ctrler负责，rm的时候是我们UTM负责
+  if (!taskList[0]) return;
+  const rt = getRestTime(taskList[0].endTime);
+  const rtText = rt ? `预计${rt}后完成` : '';
+  return taskList[0].informMsg.concat(rtText);
 };

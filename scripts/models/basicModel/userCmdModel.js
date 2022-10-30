@@ -75,7 +75,7 @@ export const setUserInfo = async function (userId, userInfoObj) {
 
 /**
  * 用户在某局游戏文件夹的这个列表里吗
- * @param listName 'blackList'
+ * @param {String} listName 'blackList'
  * @returns {Promise<Boolean>}
  */
 export const judgeUserInGameList = async function (userId, gameId, listName) {

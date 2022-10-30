@@ -27,12 +27,25 @@ export class TimingTask extends _ParentClass {
   }
 
   async detectFirst() {
-    // 1)
+    // 1) 获取回复消息对象
     const msgObj = await this.detect();
     if (msgObj) {
-      if (msgObj.isPrivate) this.sendPrivate(msgObj.userId, msgObj.informMsg);
-      if (msgObj.isGroup)
-        this.sendGroup(msgObj.groupId, msgObj.informMsg, msgObj.userId);
+      const { informMsg, userId } = msgObj;
+      // 2) 群聊私聊分类讨论，消息一条多条也分类讨论
+      if (msgObj.isPrivate) {
+        return Array.isArray(informMsg)
+          ? this.sendPrivate(userId, informMsg.join('\n---------------\n'))
+          : this.sendPrivate(userId, informMsg);
+      }
+      if (msgObj.isGroup) {
+        return Array.isArray(informMsg)
+          ? this.sendGroup(
+              msgObj.groupId,
+              informMsg.join('\n---------------\n'),
+              userId
+            )
+          : this.sendGroup(msgObj.groupId, informMsg, userId);
+      }
     }
   }
 }

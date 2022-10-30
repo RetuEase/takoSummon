@@ -18,7 +18,7 @@ export class UserInfo {
 
 export class PlayerState {
   constructor() {
-    this.locatedIn = 1;
+    this.locatedIn = '1';
     this.property = {
       mentionAdjust: [1, 0, 0],
       mention: [10, 0, 0],

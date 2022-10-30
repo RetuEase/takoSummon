@@ -3,7 +3,7 @@ import { segment } from 'oicq';
 import Show from '../../views/show.js';
 
 /**
- * 用户查看游戏内基本信息图片的指令
+ * 玩家查看游戏内基本信息图片的指令
  */
 
 const IV_CMD_PRIOR = 200;
@@ -13,7 +13,7 @@ export class InfoViewCmd extends _ParentClass {
   constructor() {
     super({
       name: 'InfoViewCmd',
-      dsc: '用户查看游戏内基本信息图片的指令',
+      dsc: '玩家查看游戏内基本信息图片的指令',
       event: 'message',
       priority: IV_CMD_PRIOR,
       rule: [

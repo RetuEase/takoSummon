@@ -73,6 +73,9 @@ class Graph {
     // [point(str), dist(num)][]
     return Object.entries(graph[+point]);
   }
+  async #getPlaceName(placeId) {
+    return (await Config.getConfig('gameSet', 'gameMap')).nameMap[+placeId];
+  }
 
   /** 得到两个相邻点的距离 */
   getEdgeLen(point1, point2) {
@@ -86,9 +89,9 @@ class Graph {
    * 放进来之前记得统一一下tasksArr里的informMsg为前往endPoint
    * @param {Number} commuteSpeed
    * @param  {...any} tasksArr 旧的一串“前往XX”obj(其实只有第一个和最后一个第第二个参数有用，中间的全填0都行)
-   * @returns {Array} 新的一串“前往XX”obj（数组！！！）
+   * @returns {Promise<Array>} 新的一串“前往XX”obj（数组！！！）
    */
-  getPathArr(commuteSpeed, ...tasksArr) {
+  async getPathArr(commuteSpeed, ...tasksArr) {
     // 这里的time都是timestamp(ms)
     const nowTime = getNowTimeStamp();
     // 1) 从tasksArr里拿到我们要的数据
@@ -108,6 +111,7 @@ class Graph {
     if (halfway) {
       // 4) 半途的话就有4、5了，半途的话要计算distance来加新点(0)
       const { startTime, endTime } = curTask;
+      console.log('sT', startTime, 'nT', nowTime, 'eT', endTime);
       // NOTE: 这里我们用time*speed/60000来算distance，是会有问题的(speed和time是弱绑定的)
       const b2startDist = ((nowTime - +startTime) * commuteSpeed) / 60000;
       const b2curEndDist = ((+endTime - nowTime) * commuteSpeed) / 60000;
@@ -117,6 +121,7 @@ class Graph {
 
       // 5) 真·起始点为0，startPoint用作返回redisActString时的补充了
       const adjcTable = this.#getAdjacencyTable(curGraph, '0');
+      console.log('邻接表', adjcTable);
 
       adjcTable.forEach(point => {
         // 推入几个pathObj作为起始
@@ -153,38 +158,43 @@ class Graph {
 
     // 7) 将最优路径格式化为n-1个obj放入数组中返回
     console.log(bestPath);
-    const newTasksArr = bestPath
-      .map((point, i, arr) => {
-        // 如果是从0到出发点，那么可视为从首个目标点出发/折返；否则仍视为从原出发点出发
-        if (point === '0') {
-          // arr[i+1] = arr[1] = startPoint/curEndPoint
-          const fakeStartPoint =
-            startPoint === arr[i + 1] ? curEndPoint : startPoint;
-          // sT是计算出来的，方便再次确认距离
-          return {
-            ...curTask,
-            params: [fakeStartPoint, arr[i + 1], true], // sT,eT,hW
-            startTime:
-              nowTime - (curGraph[0][fakeStartPoint] / commuteSpeed) * 60000,
-            endTime: nowTime + (curGraph[0][arr[i + 1]] / commuteSpeed) * 60000,
-          };
-        }
+    const newTasksArr = Promise.all(
+      bestPath
+        .map(async (point, i, arr) => {
+          // 如果是从0到出发点，那么可视为从首个目标点出发/折返；否则仍视为从原出发点出发
+          if (point === '0') {
+            // arr[i+1] = arr[1] = startPoint/curEndPoint
+            const fakeStartPoint =
+              startPoint === arr[i + 1] ? curEndPoint : startPoint;
+            // sT是计算出来的，方便再次确认距离
+            return {
+              ...curTask,
+              informMsg: `正在前往${await this.#getPlaceName(arr[i + 1])}...`,
+              params: [fakeStartPoint, arr[i + 1], true], // sT,eT,hW
+              startTime:
+                nowTime - (curGraph[0][fakeStartPoint] / commuteSpeed) * 60000,
+              endTime:
+                nowTime + (curGraph[0][arr[i + 1]] / commuteSpeed) * 60000,
+            };
+          }
 
-        // 非半途/半途后面的那些（当然第一个也要变成半途了，但这就不是我们的任务了）
-        // NOTE: 外面的函数应当履行将非半途但推入当前行动的obj改为半途、计算4、5的责任
-        if (i < arr.length - 1)
-          return {
-            ...curTask,
-            params: [arr[i], arr[i + 1], false],
-            // 不仅不计算，还要把你放进来的清空！ NOTE
-            startTime: false,
-            endTime: false,
-          };
+          // 非半途/半途后面的那些（当然第一个也要变成半途了，但这就不是我们的任务了）
+          // NOTE: 外面的函数应当履行将非半途但推入当前行动的obj改为半途、计算4、5的责任
+          if (i < arr.length - 1)
+            return {
+              ...curTask,
+              informMsg: `正在前往${await this.#getPlaceName(arr[i + 1])}...`,
+              params: [arr[i], arr[i + 1], false],
+              // 不仅不计算，还要把你放进来的清空！ NOTE
+              startTime: false,
+              endTime: false,
+            };
 
-        // 终点，不用管，还要删
-        return '';
-      })
-      .slice(0, -1);
+          // 终点，不用管，还要删
+          return '';
+        })
+        .slice(0, -1)
+    );
 
     return newTasksArr;
   }

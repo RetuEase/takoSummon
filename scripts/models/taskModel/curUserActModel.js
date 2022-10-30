@@ -30,6 +30,7 @@ const exeFunc = async function (userAct) {
 /**
  * 修改redis的内容（有->有/有->无/无->有）
  * @param newUserAct 设置为obj，取消为''
+ * @returns 若改变成功返回船新ua(含sT/eT)，改变失败或无输入新ua返回undefined
  */
 export const change = async function (userId, newUserAct) {
   const gameId = await getGameId();
@@ -39,7 +40,7 @@ export const change = async function (userId, newUserAct) {
   const curUserAct = await redis.get(`takoSummon:${userId}:curUserAct`);
 
   // 2) 如果一开始有，要先取消tt
-  if (curUserAct) {
+  if (curUserAct && curUserAct !== '{}') {
     const { endTime } = JSON.parse(curUserAct);
     TimingTaskMonitor.cancel(userId, endTime);
 
@@ -55,7 +56,7 @@ export const change = async function (userId, newUserAct) {
       redis.set(`takoSummon:${userId}:curUserAct`, '');
     }
 
-    return;
+    return newUserAct;
   }
 
   // 3) 如果一开始没有而后面有，那就要调用calc_actName来计算sT/eT了
@@ -73,7 +74,7 @@ export const change = async function (userId, newUserAct) {
   }
 };
 
-/** redis 有->无 调用UTM的remove 调用对应的执行函数，返回消息 */
+/** redis 有->无 调用UTM的remove 调用对应的执行函数，返回消息obj */
 export const finish = async function (userId) {
   const gameId = await getGameId();
   if (!gameId) return;
@@ -84,11 +85,14 @@ export const finish = async function (userId) {
 
   // 2) 调用UTM的remove和清空redis
   await redis.set(`takoSummon:${userId}:curUserAct`, '');
-  UtModel.remove(userId, 0, false);
+  const extraInformMsg = await UtModel.remove(userId, 0, false);
 
-  // 3) 调用对应的执行函数
+  // 3) 调用对应的执行函数，修改回复信息
   const userAct = JSON.parse(finishedUserAct);
-  return exeFunc(userAct);
+  const replyMsgObj = await exeFunc(userAct);
+  if (extraInformMsg)
+    replyMsgObj.informMsg = [replyMsgObj.informMsg, extraInformMsg];
+  return replyMsgObj;
 };
 
 /** 将redis中的任务同步到TTM，不在的试试从UTM同步 */
@@ -103,22 +107,26 @@ export const initTt = async function () {
     return await redis.get(`takoSummon:${userId}:curUserAct`);
   });
   const redisLoads = await Promise.allSettled(redisProms);
+  console.log('redisLoads:', redisLoads);
 
   // 2) 将redis的任务注册到游戏对象的定时任务中
-  redisLoads.forEach(({ status, value: userAct = '' }, index) => {
-    if (status !== 'fulfilled') return;
-    const userId = userIdList[index];
-    if (userAct) {
-      // redis.set(...)
-      TimingTaskMonitor.register(userId, userAct.endTime);
-    }
-    // 不在的试试从UTM同步
-    else {
-      const firstUt = UtModel.getFirst(userId);
-      if (firstUt) {
-        redis.set(`takoSummon:${userId}:curUserAct`, JSON.stringify(firstUt));
-        TimingTaskMonitor.register(userId, firstUt.endTime);
+  await Promise.allSettled(
+    redisLoads.map(async ({ status, value: userAct = '' }, index) => {
+      if (status !== 'fulfilled') return;
+      const userId = userIdList[index];
+      // NOTE: 去除空对象干扰
+      if (userAct && userAct !== '{}') {
+        // redis.set(...)
+        TimingTaskMonitor.register(userId, JSON.parse(userAct).endTime);
       }
-    }
-  });
+      // 不在的试试从UTM同步
+      else {
+        const firstUt = await UtModel.getFirst(userId);
+        if (firstUt) {
+          redis.set(`takoSummon:${userId}:curUserAct`, JSON.stringify(firstUt));
+          TimingTaskMonitor.register(userId, firstUt.endTime);
+        }
+      }
+    })
+  );
 };
