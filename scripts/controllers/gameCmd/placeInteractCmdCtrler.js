@@ -1,44 +1,14 @@
 // Functions
-import { noSeeInfo, getGameId } from '../../tools/fileSystem/inspect.js';
+import { getGameId } from '../../tools/fileSystem/inspect.js';
 import { getRestTime } from '../../tools/misc/misc.js';
 // Templates
 import { placeInteractCmdHandler } from '../../apps/GameCmd/PlaceInteractCmd.js';
 import * as UtModel from '../../models/taskModel/userTaskModel.js';
 import * as CurModel from '../../models/gameModel/placeInteractCmdModel.js';
-import * as UcModel from '../../models/basicModel/userCmdModel.js';
 
 /**
  * 玩家与地点进行交互的指令
  */
-
-/** 条件判断 */
-const condJudge = async function (userId) {
-  const noSee = noSeeInfo(userId);
-  if (noSee) return [false, noSee];
-
-  const gameId = await getGameId();
-  if (!gameId) return [false, '都没开始游戏呢'];
-
-  const inGame = await UcModel.judgeUserInGameList(
-    userId,
-    gameId,
-    'attendList'
-  );
-  if (!inGame) {
-    const exitedGame = await UcModel.judgeUserInGameList(
-      userId,
-      gameId,
-      'blackList'
-    );
-
-    return [
-      false,
-      exitedGame ? '你都退出游戏了还想搞什么' : '你都还没加入游戏呢',
-    ];
-  }
-
-  return [true, gameId];
-};
 
 /** 0探索某处 */
 const exploreBegin = async function (eData) {
@@ -56,7 +26,7 @@ const gotoBegin = async function (eData) {
   const { userId, userMsg } = eData;
 
   // 1) 条件判断
-  const [condition, gameId] = await condJudge(userId);
+  const [condition, gameId] = await CurModel.condJudge(userId);
   if (!condition) return gameId; // 这里的"gameId"是replyMsg
 
   // 2) 处理消息
@@ -107,7 +77,11 @@ const gotoBegin = async function (eData) {
     const rt = getRestTime(curUserAct.endTime);
     const rtText = rt ? `尚余${rt}完成` : '';
 
-    await UtModel.push(userId, newTask);
+    await UtModel.push(
+      userId,
+      newTask,
+      CurModel.getCommuteSpeed(userId, gameId)
+    );
     return [
       `当前行动:${curUserAct.informMsg}${rtText}`,
       `新目标：动身前往${effMsg}`,

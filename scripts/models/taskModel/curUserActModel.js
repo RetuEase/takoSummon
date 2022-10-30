@@ -47,7 +47,7 @@ export const change = async function (userId, newUserAct) {
     // 如果新的也有，大概是合并分解的结果（半途），graph已经处理了sT/eT，直接放到redis和TTM即可
     if (newUserAct) {
       const { actApp, actName, params } = newUserAct;
-      // 如果是假的，不是真的...那应该是一并删除
+      // 如果是假的，不是真的...那应该是remove（删完还有东西）
       if (!params[2]) newUserAct = await addTime(newUserAct, actApp, actName);
 
       redis.set(`takoSummon:${userId}:curUserAct`, JSON.stringify(newUserAct));
@@ -63,8 +63,8 @@ export const change = async function (userId, newUserAct) {
   if (newUserAct) {
     const { actApp, actName, params } = newUserAct;
 
-    if (params[2]) logger.info(`成功同步${userId}的动作！`);
-    // 如果是假的，不是真的...那应该只是同步过来的
+    if (params[2]) logger.info(`${userId}成功同步动作，或成功返程！`);
+    // 如果是假的，不是真的（有半途标识符）...那就是同步/返程
     else newUserAct = await addTime(newUserAct, actApp, actName);
     // 放到redis和TTM中
     redis.set(`takoSummon:${userId}:curUserAct`, JSON.stringify(newUserAct));
