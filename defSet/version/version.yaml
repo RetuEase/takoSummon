@@ -1,9 +1,15 @@
 currentVersion: alphaV0.0.5
-updateDate: 2022/10/22
+updateDate: 2022/10/30
 disc:
-  - 实现了excel和BFS搜索最短路径
+  - 定时任务TTM、UAM、UTM三大结构
+  - 将回调函数都放在ctrler.js里统一调配
+  - 实现了前往和取消前往
 previousVerions:
   - version: alphaV0.0.3
-  - updateDate: 2022/10/18
-  - disc:
+    updateDate: 2022/10/18
+    disc:
       - 实现了发送帮助图像
+  - version: alphaV0.0.4
+    updateDate: 2022/10/22
+    disc:
+      - 实现了excel和BFS搜索最短路径
